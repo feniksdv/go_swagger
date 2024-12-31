@@ -10,7 +10,8 @@ import (
 	"github.com/joho/godotenv"
 )
 
-func GetMenu(a fyne.App, w fyne.Window) *fyne.MainMenu {
+func GetMenu(a fyne.App, w fyne.Window, updateContent func(fyne.CanvasObject)) *fyne.MainMenu {
+
 	file := fyne.NewMenu("Файл",
 		fyne.NewMenuItem("Импорт", func() {
 			//TODO
@@ -24,11 +25,12 @@ func GetMenu(a fyne.App, w fyne.Window) *fyne.MainMenu {
 	)
 
 	settings := fyne.NewMenu("Настройки",
-		fyne.NewMenuItem("Сгененировать ключ", func() {
+		fyne.NewMenuItem("Сгененировать токен", func() {
 			//TODO
 		}),
-		fyne.NewMenuItem("Настроить", func() {
-			//TODO
+		fyne.NewMenuItem("Путь до проекта", func() {
+			fileUploadPage := buildFileUploadPage(w)
+			updateContent(fileUploadPage)
 		}),
 	)
 

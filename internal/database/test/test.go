@@ -13,6 +13,7 @@ type test struct {
 
 func getTest() {
 	db := database.Connect()
+
 	rows, err := db.Query("select * from test")
 	if err != nil {
 		panic(err)
