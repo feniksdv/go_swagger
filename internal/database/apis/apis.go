@@ -1,7 +1,8 @@
 package apis
 
 import (
-	"fmt"
+	"database/sql"
+	"log"
 	"swagger/internal/database"
 	"time"
 )
@@ -14,6 +15,8 @@ type api struct {
 	Path        string    `json:"path"`
 	TokenId     int       `json:"token_id"`
 	Body        string    `json:"body"`
+	Private     string    `json:"private"`
+	Entity      string    `json:"entity"`
 	Created_at  time.Time `json:"created_at"`
 	Updated_at  time.Time `json:"updated_at"`
 }
@@ -22,65 +25,66 @@ func CreateOrUpdate(params []string) {
 	db := database.Connect()
 	defer db.Close()
 
-	for _, value := range params {
-		fmt.Println("params = ", value)
+	obj := api{
+		Title:      params[0],
+		Entity:     params[1],
+		Path:       params[2],
+		Method:     params[3],
+		Private:    params[4],
+		Created_at: time.Now(),
+		Updated_at: time.Now(),
 	}
-	// var id int
-	// err := db.QueryRow("SELECT id FROM entity_fields WHERE entity_id = ? AND field_name = ?", entityId, fieldName).Scan(&id)
-	// if err != nil {
-	// 	if err == sql.ErrNoRows {
-	// 		log.Println("Запись не найдена, создаем новую.")
-	// 		create(entityId, fieldName, fileldDesc)
-	// 		return
-	// 	}
-	// 	log.Fatalf("Ошибка выполнения запроса: %v", err)
-	// }
 
-	// log.Println("Таблица entities не пуста. Обновляем запись.")
-	// update(id, fileldDesc)
+	var id int
+	err := db.QueryRow("SELECT id FROM apis WHERE path = ?", params[2]).Scan(&id)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			log.Println("Запись не найдена, создаем новую.")
+			create(obj)
+			return
+		}
+		log.Fatalf("Ошибка выполнения запроса: %v", err)
+	}
+
+	log.Println("Таблица apis не пуста. Обновляем запись.")
+	update(id, obj)
 }
 
-// func create(entityId int64, fieldName, fileldDesc string) {
-// 	obj := entityFields{
-// 		EntityId:   entityId,
-// 		FieldName:  fieldName,
-// 		FieldDesc:  fileldDesc,
-// 		Created_at: time.Now(),
-// 		Updated_at: time.Now(),
-// 	}
+func create(params api) {
+	db := database.Connect()
+	defer db.Close()
 
-// 	db := database.Connect()
-// 	defer db.Close()
+	stmt, err := db.Prepare("INSERT INTO apis (title, method, path, private, entity, created_at, updated_at) VALUES (?,?,?,?,?,?,?)")
+	if err != nil {
+		log.Fatalf("Ошибка при подготовке запроса: %v", err)
+	}
+	defer stmt.Close()
 
-// 	stmt, err := db.Prepare("INSERT INTO entity_fields (entity_id, field_name, field_desc, created_at, updated_at) VALUES (?,?,?,?,?)")
-// 	if err != nil {
-// 		log.Fatalf("Ошибка при подготовке запроса: %v", err)
-// 	}
-// 	defer stmt.Close()
+	_, err = stmt.Exec(
+		params.Title,
+		params.Method,
+		params.Path,
+		params.Private,
+		params.Entity,
+		params.Created_at.Format("2006-01-02 15:04:05"),
+		params.Updated_at.Format("2006-01-02 15:04:05"),
+	)
+	if err != nil {
+		log.Fatalf("Ошибка выполнения запроса: %v", err)
+	}
 
-// 	_, err = stmt.Exec(
-// 		obj.EntityId,
-// 		obj.FieldName,
-// 		obj.FieldDesc,
-// 		obj.Created_at.Format("2006-01-02 15:04:05"),
-// 		obj.Updated_at.Format("2006-01-02 15:04:05"),
-// 	)
-// 	if err != nil {
-// 		log.Fatalf("Ошибка выполнения запроса: %v", err)
-// 	}
+	log.Println("Данные успешно добавлены в таблицу apis")
+}
 
-// 	log.Println("Данные успешно добавлены в таблицу entities")
-// }
+func update(id int, params api) {
+	db := database.Connect()
+	defer db.Close()
 
-// func update(id int, fileldDesc string) {
-// 	db := database.Connect()
-// 	defer db.Close()
+	query := "UPDATE apis SET title=?, method=?, path=?, private=?, entity=?, updated_at = CURRENT_TIMESTAMP WHERE id = ?"
 
-// 	query := "UPDATE entity_fields SET field_desc = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?"
-
-// 	_, err := db.Exec(query, fileldDesc, id)
-// 	if err != nil {
-// 		log.Fatalf("Ошибка выполнения запроса: %v", err)
-// 	}
-// 	log.Println("Данные успешно обновлены в таблицу entities")
-// }
+	_, err := db.Exec(query, params.Title, params.Method, params.Path, params.Private, params.Entity, id)
+	if err != nil {
+		log.Fatalf("Ошибка выполнения запроса: %v", err)
+	}
+	log.Println("Данные успешно обновлены в таблицу apis")
+}
