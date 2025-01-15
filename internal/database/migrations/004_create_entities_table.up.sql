@@ -1,0 +1,7 @@
+CREATE TABLE entities (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    entity VARCHAR(255) NOT NULL,
+    info VARCHAR(255),
+    created_at TIMESTAMP NOT NULL,
+    updated_at TIMESTAMP NOT NULL
+);
